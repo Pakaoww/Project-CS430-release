@@ -1,0 +1,421 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background-color: #1a3a52;
+    color: white;
+    padding: 20px;
+    border-radius: 4px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+section {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #1a3a52;
+}
+
+/* Algorithm Section */
+.algorithms {
+    background-color: #e8f4f8;
+}
+
+.algorithm-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.algo-btn {
+    padding: 10px 15px;
+    background-color: #b8d4e8;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.algo-btn:hover {
+    background-color: #a0c5e0;
+}
+
+.algo-btn.active {
+    background-color: #5a8fb0;
+    color: white;
+}
+
+/* Processes Section */
+.process-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.process-btn {
+    padding: 10px 15px;
+    background-color: #1a3a52;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.process-btn:hover {
+    background-color: #142a3f;
+}
+
+.quantum-btn {
+    padding: 8px 12px;
+    background-color: #e8f4f8;
+    color: #1a3a52;
+    border: 1px solid #a0c5e0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.quantum-btn:hover {
+    background-color: #d6eaf3;
+}
+
+.quantum-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.quantum-label {
+    font-size: 14px;
+    color: #1a3a52;
+    font-weight: 600;
+}
+
+.quantum-input {
+    width: 120px;
+    padding: 6px 8px;
+    border: 1px solid #cbdbe6;
+    border-radius: 4px;
+}
+
+.quantum-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 36px;
+    border: 1px solid #9fb6cd;
+    background: #ffffff;
+    border-radius: 4px;
+}
+
+.quantum-box .quantum-input {
+    width: 60px;
+    border: none;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Gantt chart visuals */
+.gantt-visual {
+    position: relative;
+    width: 100%;
+    background: #eef6fb;
+    border: 1px solid #9fb6cd;
+    border-radius: 4px;
+    padding: 12px 6px;
+    box-sizing: border-box;
+    min-height: 60px;
+}
+
+.gantt-inner {
+    position: relative;
+    height: 40px;
+}
+
+.gantt-block {
+    position: absolute;
+    top: 0;
+    height: 40px;
+    background: #d7eaf6;
+    border: 1px solid #8fb7d1;
+    color: #123b4f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+.gantt-time-scale {
+    position: relative;
+    height: 20px;
+    margin-top: 6px;
+}
+
+.gantt-time-scale .gantt-time-label {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #333;
+}
+
+.process-left {
+    display: flex;
+    gap: 10px;
+}
+
+.process-right {
+    display: flex;
+    align-items: center;
+}
+
+/* Tables */
+.process-table-container,
+.results-table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+thead {
+    background-color: #5a8fb0;
+    color: white;
+}
+
+th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 13px;
+}
+
+tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f5f5f5;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+/* Process Table Input */
+.process-table input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.process-table input:disabled {
+    background-color: #e8e8e8;
+    cursor: not-allowed;
+}
+
+.process-table input[type="number"] {
+    text-align: center;
+}
+
+/* Calculate Button */
+.calculate {
+    text-align: center;
+    background-color: #f9f9f9;
+}
+
+.calculate-btn {
+    padding: 12px 40px;
+    background-color: #1a3a52;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.calculate-btn:hover {
+    background-color: #142a3f;
+}
+
+.calculate-btn:active {
+    transform: scale(0.98);
+}
+
+/* Results Section */
+.results-table tbody td {
+    text-align: center;
+}
+
+.results-table tbody tr:nth-child(even) {
+    background-color: #e8f1f8;
+}
+
+.results-table tbody tr:nth-child(odd) {
+    background-color: #f5fbff;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* Gantt Chart */
+.gantt-section {
+    padding: 20px;
+}
+
+.gantt-chart {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+    border-radius: 4px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-style: italic;
+}
+
+.gantt-container {
+    width: 100%;
+}
+
+.gantt-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.gantt-label {
+    width: 80px;
+    font-weight: 600;
+    font-size: 13px;
+    margin-right: 10px;
+}
+
+.gantt-timeline {
+    display: flex;
+    gap: 2px;
+    flex: 1;
+    align-items: center;
+}
+
+.gantt-block {
+    display: inline-block;
+    background-color: #5a8fb0;
+    color: white;
+    padding: 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.gantt-time-label {
+    display: inline-block;
+    width: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Utility to hide optional UI elements */
+.hidden {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    section {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    section h2 {
+        font-size: 16px;
+    }
+
+    .process-buttons {
+        flex-direction: column;
+    }
+
+    .process-btn,
+    .algo-btn {
+        width: 100%;
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    table {
+        font-size: 12px;
+    }
+}

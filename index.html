@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Scheduling Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CPU Scheduling</h1>
+        </header>
+
+        <section class="algorithms">
+            <h2>Algorithms</h2>
+            <div class="algorithm-selector">
+                <button class="algo-btn active" data-algorithm="fcfs">First Come First Serve (FCFS)</button>
+                <button class="algo-btn" data-algorithm="sjf">Shortest Job First (SJF)</button>
+                <button class="algo-btn" data-algorithm="srtf">Shortest Remaining Job First (SRTF)</button>
+                <button class="algo-btn" data-algorithm="priority-nonpreemptive">Priority (Non Preemptive)</button>
+                <button class="algo-btn" data-algorithm="priority-preemptive">Priority (Preemptive)</button>
+                <button class="algo-btn" data-algorithm="rr">Round Robin</button>
+            </div>
+        </section>
+
+        <section class="processes">
+            <h2>Processes</h2>
+            <div class="process-buttons">
+                <div class="process-left">
+                    <button id="add-process" class="process-btn">Add Process</button>
+                    <button id="delete-process" class="process-btn">Remove Process</button>
+                </div>
+                <div class="process-right">
+                    <div class="quantum-control" style="display:none;">
+                        <div class="quantum-label">Time Quantum</div>
+                        <div class="quantum-box">
+                            <input id="quantum-input" type="number" value="1" min="1" class="quantum-input">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="process-table-container">
+                <table class="process-table">
+                    <thead>
+                        <tr>
+                            <th>Process Number</th>
+                            <th>Arrival Time</th>
+                            <th>Burst Time</th>
+                            <th>Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-tbody">
+                        <tr class="process-row">
+                               <td><input type="text" value="P1" disabled></td>
+                            <td><input type="number" class="arrival-time" value="0" min="0"></td>
+                            <td><input type="number" class="burst-time" value="1" min="1"></td>
+                            <td><input type="number" class="priority" value="0" min="0"></td>
+                        </tr>
+                        <tr class="process-row">
+                               <td><input type="text" value="P2" disabled></td>
+                            <td><input type="number" class="arrival-time" value="0" min="0"></td>
+                            <td><input type="number" class="burst-time" value="1" min="1"></td>
+                            <td><input type="number" class="priority" value="0" min="0"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="calculate">
+            <button id="calculate-btn" class="calculate-btn">Calculate</button>
+        </section>
+
+        <section class="results">
+            <h2>Results</h2>
+            <div class="results-table-container">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Process ID</th>
+                            <th>Arrival Time</th>
+                            <th>Burst Time</th>
+                            <th>Priority</th>
+                            <th>Completion Time</th>
+                            <th>Waiting Time</th>
+                            <th>Turnaround Time</th>
+                            <th>Response Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody">
+                        <tr>
+                            <td>1</td>
+                            <td colspan="7" class="empty-message">Run calculations to see results</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="gantt-section">
+            <h2>Gantt Chart</h2>
+            <div id="gantt-chart" class="gantt-chart"></div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

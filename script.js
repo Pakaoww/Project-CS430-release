@@ -1,624 +1,564 @@
-// CPU Scheduling Algorithms
+// CPU Scheduling Algorithms and App Controller
+
+// FCFS Scheduler
 class FCFSScheduler {
-    schedule(processes) {
-        const sortedProcesses = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
-        const results = [];
-        let currentTime = 0;
-
-        for (const process of sortedProcesses) {
-            const arrivalTime = process.arrivalTime;
-            const cpuTime = process.cpuTime;
-            const startTime = Math.max(currentTime, arrivalTime);
-            const completionTime = startTime + cpuTime;
-            const turnaroundTime = completionTime - arrivalTime;
-            const waitingTime = turnaroundTime - cpuTime;
-            const responseTime = startTime - arrivalTime;
-
-            results.push({
-                processId: process.id,
-                arrivalTime,
-                cpuTime,
-                priority: process.priority,
-                completionTime,
-                waitingTime,
-                turnaroundTime,
-                responseTime,
-                startTime,
-                endTime: completionTime
-            });
-
-            currentTime = completionTime;
-        }
-
-        return results;
+  schedule(processes) {
+    const sorted = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+    const results = [];
+    let currentTime = 0;
+    for (const p of sorted) {
+      const startTime = Math.max(currentTime, p.arrivalTime);
+      const completionTime = startTime + p.cpuTime;
+      const turnaroundTime = completionTime - p.arrivalTime;
+      const waitingTime = turnaroundTime - p.cpuTime;
+      const responseTime = startTime - p.arrivalTime;
+      results.push({
+        processId: p.id,
+        arrivalTime: p.arrivalTime,
+        cpuTime: p.cpuTime,
+        priority: p.priority,
+        startTime,
+        completionTime,
+        endTime: completionTime,
+        waitingTime,
+        turnaroundTime,
+        responseTime
+      });
+      currentTime = completionTime;
     }
+    return results;
+  }
 }
 
-// Shortest Job First Scheduler
+// SJF Scheduler (non-preemptive)
 class SJFScheduler {
-    schedule(processes) {
-        const results = [];
-        const remaining = [...processes];
-        let currentTime = 0;
-
-        while (remaining.length > 0) {
-            // Get processes that have arrived
-            const available = remaining.filter(p => p.arrivalTime <= currentTime);
-
-            if (available.length === 0) {
-                // If no process has arrived, advance time to next arrival
-                const nextProcess = remaining.reduce((min, p) => 
-                    p.arrivalTime < min.arrivalTime ? p : min
-                );
-                currentTime = nextProcess.arrivalTime;
-                continue;
-            }
-
-            // Sort by CPU time and pick the shortest
-            available.sort((a, b) => a.cpuTime - b.cpuTime);
-            const process = available[0];
-
-            const arrivalTime = process.arrivalTime;
-            const cpuTime = process.cpuTime;
-            const startTime = currentTime;
-            const completionTime = startTime + cpuTime;
-            const turnaroundTime = completionTime - arrivalTime;
-            const waitingTime = turnaroundTime - cpuTime;
-            const responseTime = startTime - arrivalTime;
-
-            results.push({
-                processId: process.id,
-                arrivalTime,
-                cpuTime,
-                priority: process.priority,
-                completionTime,
-                waitingTime,
-                turnaroundTime,
-                responseTime,
-                startTime,
-                endTime: completionTime
-            });
-
-            // Remove from remaining and update current time
-            remaining.splice(remaining.indexOf(process), 1);
-            currentTime = completionTime;
-        }
-
-        return results;
+  schedule(processes) {
+    const results = [];
+    const remaining = [...processes];
+    let currentTime = 0;
+    while (remaining.length > 0) {
+      const available = remaining.filter(p => p.arrivalTime <= currentTime);
+      if (available.length === 0) {
+        currentTime = Math.min(...remaining.map(p => p.arrivalTime));
+        continue;
+      }
+      available.sort((a, b) => a.cpuTime - b.cpuTime || a.arrivalTime - b.arrivalTime);
+      const p = available[0];
+      const startTime = Math.max(currentTime, p.arrivalTime);
+      const completionTime = startTime + p.cpuTime;
+      const turnaroundTime = completionTime - p.arrivalTime;
+      const waitingTime = turnaroundTime - p.cpuTime;
+      const responseTime = startTime - p.arrivalTime;
+      results.push({
+        processId: p.id,
+        arrivalTime: p.arrivalTime,
+        cpuTime: p.cpuTime,
+        priority: p.priority,
+        startTime,
+        completionTime,
+        endTime: completionTime,
+        waitingTime,
+        turnaroundTime,
+        responseTime
+      });
+      remaining.splice(remaining.indexOf(p), 1);
+      currentTime = completionTime;
     }
+    return results;
+  }
 }
 
-// Shortest Remaining Time First (Preemptive)
+// SRTF Scheduler (preemptive) - returns {results, timeline}
 class SRTFScheduler {
-    schedule(processes) {
-        const n = processes.length;
-        const remaining = {};
-        const started = {};
-        const completion = {};
-        const results = [];
-        processes.forEach(p => { remaining[p.id] = p.cpuTime; started[p.id] = -1; });
-
-        let currentTime = Math.min(...processes.map(p => p.arrivalTime));
-        let completed = 0;
-
-        while (completed < n) {
-            const available = processes.filter(p => p.arrivalTime <= currentTime && remaining[p.id] > 0);
-            if (available.length === 0) {
-                // jump forward
-                const future = processes.filter(p => remaining[p.id] > 0);
-                currentTime = Math.min(...future.map(p => p.arrivalTime));
-                continue;
-            }
-
-            // pick with smallest remaining time
-            available.sort((a, b) => remaining[a.id] - remaining[b.id] || a.arrivalTime - b.arrivalTime);
-            const p = available[0];
-
-            if (started[p.id] === -1) started[p.id] = currentTime;
-
-            // execute for 1 time unit (granularity = 1)
-            remaining[p.id] -= 1;
-            currentTime += 1;
-
-            if (remaining[p.id] === 0) {
-                completion[p.id] = currentTime;
-                completed += 1;
-                const arrivalTime = p.arrivalTime;
-                const cpuTime = p.cpuTime;
-                const startTime = started[p.id];
-                const completionTime = completion[p.id];
-                const turnaroundTime = completionTime - arrivalTime;
-                const waitingTime = turnaroundTime - cpuTime;
-                const responseTime = startTime - arrivalTime;
-
-                results.push({
-                    processId: p.id,
-                    arrivalTime,
-                    cpuTime,
-                    priority: p.priority,
-                    completionTime,
-                    waitingTime,
-                    turnaroundTime,
-                    responseTime,
-                    startTime,
-                    endTime: completionTime
-                });
-            }
-        }
-
-        return results;
+  schedule(processes) {
+    const n = processes.length;
+    const remaining = {};
+    const started = {};
+    const completion = {};
+    const results = [];
+    const timeline = [];
+    processes.forEach(p => {
+      remaining[p.id] = p.cpuTime;
+      started[p.id] = -1;
+    });
+    let currentTime = Math.min(...processes.map(p => p.arrivalTime));
+    let completed = 0;
+    while (completed < n) {
+      const available = processes.filter(p => p.arrivalTime <= currentTime && remaining[p.id] > 0);
+      if (available.length === 0) {
+        const future = processes.filter(p => remaining[p.id] > 0);
+        currentTime = Math.min(...future.map(p => p.arrivalTime));
+        continue;
+      }
+      available.sort((a, b) => remaining[a.id] - remaining[b.id] || a.arrivalTime - b.arrivalTime);
+      const p = available[0];
+      if (started[p.id] === -1) started[p.id] = currentTime;
+      const last = timeline[timeline.length - 1];
+      if (last && last.processId === p.id && last.end === currentTime) {
+        last.end = currentTime + 1;
+      } else {
+        timeline.push({ processId: p.id, start: currentTime, end: currentTime + 1 });
+      }
+      remaining[p.id] -= 1;
+      currentTime += 1;
+      if (remaining[p.id] === 0) {
+        completion[p.id] = currentTime;
+        completed += 1;
+        const arrivalTime = p.arrivalTime;
+        const cpuTime = p.cpuTime;
+        const startTime = started[p.id];
+        const completionTime = completion[p.id];
+        const turnaroundTime = completionTime - arrivalTime;
+        const waitingTime = turnaroundTime - cpuTime;
+        const responseTime = startTime - arrivalTime;
+        results.push({
+          processId: p.id,
+          arrivalTime,
+          cpuTime,
+          priority: p.priority,
+          startTime,
+          completionTime,
+          endTime: completionTime,
+          waitingTime,
+          turnaroundTime,
+          responseTime
+        });
+      }
     }
+    return { results, timeline };
+  }
 }
 
 // Priority (Non-Preemptive)
 class PriorityNonPreemptiveScheduler {
-    schedule(processes) {
-        const results = [];
-        const remaining = [...processes];
-        let currentTime = 0;
-
-        while (remaining.length > 0) {
-            const available = remaining.filter(p => p.arrivalTime <= currentTime);
-            if (available.length === 0) {
-                currentTime = Math.min(...remaining.map(p => p.arrivalTime));
-                continue;
-            }
-
-            // lower priority value = higher priority
-            available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
-            const p = available[0];
-            const startTime = Math.max(currentTime, p.arrivalTime);
-            const completionTime = startTime + p.cpuTime;
-            const turnaroundTime = completionTime - p.arrivalTime;
-            const waitingTime = turnaroundTime - p.cpuTime;
-            const responseTime = startTime - p.arrivalTime;
-
-            results.push({
-                processId: p.id,
-                arrivalTime: p.arrivalTime,
-                cpuTime: p.cpuTime,
-                priority: p.priority,
-                completionTime,
-                waitingTime,
-                turnaroundTime,
-                responseTime,
-                startTime,
-                endTime: completionTime
-            });
-
-            remaining.splice(remaining.indexOf(p), 1);
-            currentTime = completionTime;
-        }
-
-        return results;
+  schedule(processes) {
+    const results = [];
+    const remaining = [...processes];
+    let currentTime = 0;
+    while (remaining.length > 0) {
+      const available = remaining.filter(p => p.arrivalTime <= currentTime);
+      if (available.length === 0) {
+        currentTime = Math.min(...remaining.map(p => p.arrivalTime));
+        continue;
+      }
+      available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
+      const p = available[0];
+      const startTime = Math.max(currentTime, p.arrivalTime);
+      const completionTime = startTime + p.cpuTime;
+      const turnaroundTime = completionTime - p.arrivalTime;
+      const waitingTime = turnaroundTime - p.cpuTime;
+      const responseTime = startTime - p.arrivalTime;
+      results.push({
+        processId: p.id,
+        arrivalTime: p.arrivalTime,
+        cpuTime: p.cpuTime,
+        priority: p.priority,
+        startTime,
+        completionTime,
+        endTime: completionTime,
+        waitingTime,
+        turnaroundTime,
+        responseTime
+      });
+      remaining.splice(remaining.indexOf(p), 1);
+      currentTime = completionTime;
     }
+    return results;
+  }
 }
 
 // Priority (Preemptive)
 class PriorityPreemptiveScheduler {
-    schedule(processes) {
-        const n = processes.length;
-        const remaining = {};
-        const started = {};
-        const completion = {};
-        const results = [];
-        processes.forEach(p => { remaining[p.id] = p.cpuTime; started[p.id] = -1; });
-
-        let currentTime = Math.min(...processes.map(p => p.arrivalTime));
-        let completed = 0;
-
-        while (completed < n) {
-            const available = processes.filter(p => p.arrivalTime <= currentTime && remaining[p.id] > 0);
-            if (available.length === 0) {
-                const future = processes.filter(p => remaining[p.id] > 0);
-                currentTime = Math.min(...future.map(p => p.arrivalTime));
-                continue;
-            }
-
-            // choose by priority (lower value = higher priority)
-            available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
-            const p = available[0];
-
-            if (started[p.id] === -1) started[p.id] = currentTime;
-
-            remaining[p.id] -= 1;
-            currentTime += 1;
-
-            if (remaining[p.id] === 0) {
-                completion[p.id] = currentTime;
-                completed += 1;
-                const arrivalTime = p.arrivalTime;
-                const cpuTime = p.cpuTime;
-                const startTime = started[p.id];
-                const completionTime = completion[p.id];
-                const turnaroundTime = completionTime - arrivalTime;
-                const waitingTime = turnaroundTime - cpuTime;
-                const responseTime = startTime - arrivalTime;
-
-                results.push({
-                    processId: p.id,
-                    arrivalTime,
-                    cpuTime,
-                    priority: p.priority,
-                    completionTime,
-                    waitingTime,
-                    turnaroundTime,
-                    responseTime,
-                    startTime,
-                    endTime: completionTime
-                });
-            }
-        }
-
-        return results;
+  schedule(processes) {
+    const n = processes.length;
+    const remaining = {};
+    const started = {};
+    const completion = {};
+    const results = [];
+    const timeline = [];
+    processes.forEach(p => {
+      remaining[p.id] = p.cpuTime;
+      started[p.id] = -1;
+    });
+    let currentTime = Math.min(...processes.map(p => p.arrivalTime));
+    let completed = 0;
+    while (completed < n) {
+      const available = processes.filter(p => p.arrivalTime <= currentTime && remaining[p.id] > 0);
+      if (available.length === 0) {
+        const future = processes.filter(p => remaining[p.id] > 0);
+        currentTime = Math.min(...future.map(p => p.arrivalTime));
+        continue;
+      }
+      available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
+      const p = available[0];
+      if (started[p.id] === -1) started[p.id] = currentTime;
+      const last = timeline[timeline.length - 1];
+      if (last && last.processId === p.id && last.end === currentTime) {
+        last.end = currentTime + 1;
+      } else {
+        timeline.push({ processId: p.id, start: currentTime, end: currentTime + 1 });
+      }
+      remaining[p.id] -= 1;
+      currentTime += 1;
+      if (remaining[p.id] === 0) {
+        completion[p.id] = currentTime;
+        completed += 1;
+        const arrivalTime = p.arrivalTime;
+        const cpuTime = p.cpuTime;
+        const startTime = started[p.id];
+        const completionTime = completion[p.id];
+        const turnaroundTime = completionTime - arrivalTime;
+        const waitingTime = turnaroundTime - cpuTime;
+        const responseTime = startTime - arrivalTime;
+        results.push({
+          processId: p.id,
+          arrivalTime,
+          cpuTime,
+          priority: p.priority,
+          startTime,
+          completionTime,
+          endTime: completionTime,
+          waitingTime,
+          turnaroundTime,
+          responseTime
+        });
+      }
     }
+    return { results, timeline };
+  }
 }
 
 // Round Robin Scheduler
 class RoundRobinScheduler {
-    schedule(processes, quantum = 2) {
-        const n = processes.length;
-        const remaining = {};
-        const start = {};
-        const completion = {};
-        processes.forEach(p => { remaining[p.id] = p.cpuTime; start[p.id] = -1; });
+  schedule(processes, quantum = 2) {
+    const n = processes.length;
+    const remaining = {};
+    const start = {};
+    const completion = {};
+    processes.forEach(p => {
+      remaining[p.id] = p.cpuTime;
+      start[p.id] = -1;
+    });
 
-        let currentTime = 0;
-        const queue = [];
-        const byArrival = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
-        let ai = 0;
+    let currentTime = 0;
+    const queue = [];
+    const byArrival = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+    let ai = 0;
+    while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
+      queue.push(byArrival[ai]);
+      ai++;
+    }
 
-        // seed queue with arrivals at time 0
-        while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
+    const results = [];
+    const timeline = [];
+    while (Object.values(remaining).some(r => r > 0)) {
+      if (queue.length === 0) {
+        if (ai < byArrival.length) {
+          currentTime = byArrival[ai].arrivalTime;
+          while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
             queue.push(byArrival[ai]);
             ai++;
-        }
+          }
+          continue;
+        } else break;
+      }
 
-        const results = [];
-        while (Object.values(remaining).some(r => r > 0)) {
-            if (queue.length === 0) {
-                if (ai < byArrival.length) {
-                    currentTime = byArrival[ai].arrivalTime;
-                    while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
-                        queue.push(byArrival[ai]); ai++;
-                    }
-                    continue;
-                } else break;
-            }
+      const p = queue.shift();
+      if (remaining[p.id] <= 0) continue;
+      if (start[p.id] === -1) start[p.id] = Math.max(currentTime, p.arrivalTime);
+      if (currentTime < p.arrivalTime) currentTime = p.arrivalTime;
 
-            const p = queue.shift();
-            if (remaining[p.id] <= 0) continue;
-            if (start[p.id] === -1) start[p.id] = Math.max(currentTime, p.arrivalTime);
+      const slice = Math.min(quantum, remaining[p.id]);
+      const last = timeline[timeline.length - 1];
+      if (last && last.processId === p.id && last.end === currentTime) {
+        last.end = currentTime + slice;
+      } else {
+        timeline.push({ processId: p.id, start: currentTime, end: currentTime + slice });
+      }
 
-            // advance time to arrival if needed
-            if (currentTime < p.arrivalTime) currentTime = p.arrivalTime;
+      remaining[p.id] -= slice;
+      currentTime += slice;
 
-            const slice = Math.min(quantum, remaining[p.id]);
-            remaining[p.id] -= slice;
-            currentTime += slice;
+      while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
+        queue.push(byArrival[ai]);
+        ai++;
+      }
 
-            // enqueue newly arrived processes during this time slice
-            while (ai < byArrival.length && byArrival[ai].arrivalTime <= currentTime) {
-                queue.push(byArrival[ai]); ai++;
-            }
-
-            if (remaining[p.id] > 0) {
-                queue.push(p);
-            } else {
-                completion[p.id] = currentTime;
-                const arrivalTime = p.arrivalTime;
-                const cpuTime = p.cpuTime;
-                const startTime = start[p.id];
-                const completionTime = completion[p.id];
-                const turnaroundTime = completionTime - arrivalTime;
-                const waitingTime = turnaroundTime - cpuTime;
-                const responseTime = startTime - arrivalTime;
-
-                results.push({
-                    processId: p.id,
-                    arrivalTime,
-                    cpuTime,
-                    priority: p.priority,
-                    completionTime,
-                    waitingTime,
-                    turnaroundTime,
-                    responseTime,
-                    startTime,
-                    endTime: completionTime
-                });
-            }
-        }
-
-        return results;
+      if (remaining[p.id] > 0) {
+        queue.push(p);
+      } else {
+        completion[p.id] = currentTime;
+        const arrivalTime = p.arrivalTime;
+        const cpuTime = p.cpuTime;
+        const startTime = start[p.id];
+        const completionTime = completion[p.id];
+        const turnaroundTime = completionTime - arrivalTime;
+        const waitingTime = turnaroundTime - cpuTime;
+        const responseTime = startTime - arrivalTime;
+        results.push({
+          processId: p.id,
+          arrivalTime,
+          cpuTime,
+          priority: p.priority,
+          startTime,
+          completionTime,
+          endTime: completionTime,
+          waitingTime,
+          turnaroundTime,
+          responseTime
+        });
+      }
     }
+
+    return { results, timeline };
+  }
 }
 
 // Main Application
 class CPUSchedulingApp {
-    constructor() {
-        this.processList = [];
-        this.results = [];
-        this.processCount = 2;
-        this.currentAlgorithm = 'fcfs';
-        this.init();
+  constructor() {
+    this.processCount = 2;
+    this.currentAlgorithm = 'fcfs';
+    this.results = [];
+    this.timeline = null;
+    this.init();
+  }
+
+  init() {
+    this.setupEventListeners();
+    this.updateAlgorithmUI();
+  }
+
+  setupEventListeners() {
+    document.getElementById('add-process').addEventListener('click', () => this.addProcess());
+    document.getElementById('delete-process').addEventListener('click', () => this.deleteProcess());
+    document.getElementById('calculate-btn').addEventListener('click', () => this.calculateSchedule());
+
+    document.querySelectorAll('.algo-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.selectAlgorithm(e.target));
+    });
+  }
+
+  selectAlgorithm(button) {
+    document.querySelectorAll('.algo-btn').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    this.currentAlgorithm = button.dataset.algorithm;
+    this.updateAlgorithmUI();
+  }
+
+  updateAlgorithmUI() {
+    const algo = this.currentAlgorithm;
+
+    const quantumControl = document.querySelector('.quantum-control');
+    if (quantumControl) {
+      quantumControl.style.display = (algo === 'rr') ? '' : 'none';
     }
 
-    init() {
-        this.setupEventListeners();
-        // Update UI to reflect the default algorithm (hide quantum/priority as needed)
-        this.updateAlgorithmUI();
-    }
+    const isPriority = (algo === 'priority-preemptive' || algo === 'priority-nonpreemptive');
 
-    setupEventListeners() {
-        document.getElementById('add-process').addEventListener('click', () => this.addProcess());
-        document.getElementById('delete-process').addEventListener('click', () => this.deleteProcess());
-        document.getElementById('calculate-btn').addEventListener('click', () => this.calculateSchedule());
-
-        // Algorithm selector buttons
-        document.querySelectorAll('.algo-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.selectAlgorithm(e.target));
+    const processTable = document.querySelector('.process-table');
+    if (processTable) {
+      const ths = processTable.querySelectorAll('thead th');
+      let priorityIndex = -1;
+      ths.forEach((th, idx) => {
+        if (th.textContent.trim().toLowerCase() === 'priority') priorityIndex = idx;
+      });
+      if (priorityIndex >= 0) {
+        processTable.querySelectorAll('thead th')[priorityIndex].style.display = isPriority ? '' : 'none';
+        document.querySelectorAll('.process-table tbody tr').forEach(tr => {
+          const cell = tr.children[priorityIndex];
+          if (cell) cell.style.display = isPriority ? '' : 'none';
         });
-
-        // No quantum button here; quantum is edited inline in the Processes area when RR is selected.
+      }
     }
 
-    selectAlgorithm(button) {
-        // Update active button
-        document.querySelectorAll('.algo-btn').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        this.currentAlgorithm = button.dataset.algorithm;
-        this.updateAlgorithmUI();
-    }
-
-    updateAlgorithmUI() {
-        const algo = this.currentAlgorithm;
-
-        // Show quantum control (inline) only for Round Robin
-        const quantumControl = document.querySelector('.quantum-control');
-        if (quantumControl) {
-            quantumControl.style.display = (algo === 'rr') ? '' : 'none';
-        }
-
-        // Show Priority column only when using priority algorithms
-        const isPriorityAlgo = (algo === 'priority-preemptive' || algo === 'priority-nonpreemptive');
-
-        // Process table priority column toggle
-        const processTable = document.querySelector('.process-table');
-        if (processTable) {
-            const ths = processTable.querySelectorAll('thead th');
-            let priorityIndex = -1;
-            ths.forEach((th, idx) => {
-                if (th.textContent.trim().toLowerCase() === 'priority') priorityIndex = idx;
-            });
-
-            if (priorityIndex >= 0) {
-                // header
-                processTable.querySelectorAll('thead th')[priorityIndex].style.display = isPriorityAlgo ? '' : 'none';
-
-                // rows
-                document.querySelectorAll('.process-table tbody tr').forEach(tr => {
-                    const cell = tr.children[priorityIndex];
-                    if (cell) cell.style.display = isPriorityAlgo ? '' : 'none';
-                });
-            }
-        }
-
-        // Results table priority column toggle
-        const resultsTable = document.querySelector('.results-table');
-        if (resultsTable) {
-            const rThs = resultsTable.querySelectorAll('thead th');
-            let rPriorityIndex = -1;
-            rThs.forEach((th, idx) => {
-                if (th.textContent.trim().toLowerCase() === 'priority') rPriorityIndex = idx;
-            });
-
-            if (rPriorityIndex >= 0) {
-                resultsTable.querySelectorAll('thead th')[rPriorityIndex].style.display = isPriorityAlgo ? '' : 'none';
-                document.querySelectorAll('.results-table tbody tr').forEach(tr => {
-                    const cell = tr.children[rPriorityIndex];
-                    if (cell) cell.style.display = isPriorityAlgo ? '' : 'none';
-                });
-            }
-        }
-    }
-
-    addProcess() {
-        this.processCount++;
-        const tbody = document.getElementById('process-tbody');
-        const newRow = document.createElement('tr');
-        newRow.className = 'process-row';
-        newRow.innerHTML = `
-                <td><input type="text" value="P${this.processCount}" disabled></td>
-            <td><input type="number" class="arrival-time" value="0" min="0"></td>
-            <td><input type="number" class="burst-time" value="1" min="1"></td>
-            <td><input type="number" class="priority" value="0" min="0"></td>
-        `;
-        tbody.appendChild(newRow);
-        // Ensure the UI visibility (Priority column / Quantum control) matches the currently selected algorithm
-        try { this.updateAlgorithmUI(); } catch (e) { /* ignore if called before init */ }
-
-        return newRow;
-    }
-
-    addPriorityProcess() {
-        // Deprecated: adding priority via separate button is no longer used.
-        return;
-    }
-
-    deleteProcess() {
-        const tbody = document.getElementById('process-tbody');
-        const rows = tbody.querySelectorAll('tr');
-        if (rows.length > 1) {
-            tbody.removeChild(rows[rows.length - 1]);
-            this.processCount--;
-        }
-    }
-
-    addProcessBatch() {
-        const count = prompt('Enter number of processes to add:', '1');
-        if (count && !isNaN(count) && parseInt(count) > 0) {
-            for (let i = 0; i < parseInt(count); i++) {
-                this.addProcess();
-            }
-        }
-    }
-
-    getProcessesFromTable() {
-        const rows = document.querySelectorAll('.process-row');
-        const processes = [];
-
-        rows.forEach((row, index) => {
-            const arrivalTime = parseInt(row.querySelector('.arrival-time').value) || 0;
-            const cpuTime = parseInt(row.querySelector('.burst-time').value) || 0;
-            const priority = parseInt(row.querySelector('.priority').value) || 0;
-
-            if (cpuTime > 0) {
-                processes.push({
-                    id: index + 1,
-                    arrivalTime,
-                    cpuTime,
-                    priority
-                });
-            }
+    const resultsTable = document.querySelector('.results-table');
+    if (resultsTable) {
+      const rThs = resultsTable.querySelectorAll('thead th');
+      let rPriorityIndex = -1;
+      rThs.forEach((th, idx) => {
+        if (th.textContent.trim().toLowerCase() === 'priority') rPriorityIndex = idx;
+      });
+      if (rPriorityIndex >= 0) {
+        resultsTable.querySelectorAll('thead th')[rPriorityIndex].style.display = isPriority ? '' : 'none';
+        document.querySelectorAll('.results-table tbody tr').forEach(tr => {
+          const cell = tr.children[rPriorityIndex];
+          if (cell) cell.style.display = isPriority ? '' : 'none';
         });
+      }
+    }
+  }
 
-        return processes;
+  addProcess() {
+    this.processCount++;
+    const tbody = document.getElementById('process-tbody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'process-row';
+    newRow.innerHTML = `
+      <td><input type="text" value="P${this.processCount}" disabled></td>
+      <td><input type="number" class="arrival-time" value="0" min="0"></td>
+      <td><input type="number" class="burst-time" value="1" min="1"></td>
+      <td><input type="number" class="priority" value="0" min="0"></td>
+    `;
+    tbody.appendChild(newRow);
+    try {
+      this.updateAlgorithmUI();
+    } catch (e) {}
+    return newRow;
+  }
+
+  deleteProcess() {
+    const tbody = document.getElementById('process-tbody');
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length > 1) {
+      tbody.removeChild(rows[rows.length - 1]);
+      this.processCount--;
+    }
+  }
+
+  getProcessesFromTable() {
+    const rows = document.querySelectorAll('.process-row');
+    const processes = [];
+    rows.forEach((row, idx) => {
+      const arrivalTime = parseInt(row.querySelector('.arrival-time').value) || 0;
+      const cpuTime = parseInt(row.querySelector('.burst-time').value) || 0;
+      const priority = parseInt(row.querySelector('.priority').value) || 0;
+      if (cpuTime > 0) {
+        processes.push({ id: idx + 1, arrivalTime, cpuTime, priority });
+      }
+    });
+    return processes;
+  }
+
+  calculateSchedule() {
+    const processes = this.getProcessesFromTable();
+    if (processes.length === 0) {
+      alert('Please add at least one process with Burst Time > 0');
+      return;
     }
 
-    calculateSchedule() {
-        const processes = this.getProcessesFromTable();
-
-        if (processes.length === 0) {
-            alert('Please add at least one process with Burst Time > 0');
-            return;
-        }
-
-        let scheduler;
-        if (this.currentAlgorithm === 'fcfs') {
-            scheduler = new FCFSScheduler();
-            this.results = scheduler.schedule(processes);
-        } else if (this.currentAlgorithm === 'sjf') {
-            scheduler = new SJFScheduler();
-            this.results = scheduler.schedule(processes);
-        } else if (this.currentAlgorithm === 'srtf') {
-            scheduler = new SRTFScheduler();
-            this.results = scheduler.schedule(processes);
-        } else if (this.currentAlgorithm === 'priority-nonpreemptive') {
-            scheduler = new PriorityNonPreemptiveScheduler();
-            this.results = scheduler.schedule(processes);
-        } else if (this.currentAlgorithm === 'priority-preemptive') {
-            scheduler = new PriorityPreemptiveScheduler();
-            this.results = scheduler.schedule(processes);
-        } else if (this.currentAlgorithm === 'rr') {
-            const quantum = parseInt(document.getElementById('quantum-input').value) || 2;
-            scheduler = new RoundRobinScheduler();
-            this.results = scheduler.schedule(processes, quantum);
-        } else {
-            // default fallback
-            scheduler = new FCFSScheduler();
-            this.results = scheduler.schedule(processes);
-        }
-
-        this.displayResults();
-        this.displayGanttChart();
+    let schedulerResult = null;
+    if (this.currentAlgorithm === 'fcfs') {
+      schedulerResult = new FCFSScheduler().schedule(processes);
+    } else if (this.currentAlgorithm === 'sjf') {
+      schedulerResult = new SJFScheduler().schedule(processes);
+    } else if (this.currentAlgorithm === 'srtf') {
+      schedulerResult = new SRTFScheduler().schedule(processes);
+    } else if (this.currentAlgorithm === 'priority-nonpreemptive') {
+      schedulerResult = new PriorityNonPreemptiveScheduler().schedule(processes);
+    } else if (this.currentAlgorithm === 'priority-preemptive') {
+      schedulerResult = new PriorityPreemptiveScheduler().schedule(processes);
+    } else if (this.currentAlgorithm === 'rr') {
+      const quantum = parseInt(document.getElementById('quantum-input').value) || 2;
+      schedulerResult = new RoundRobinScheduler().schedule(processes, quantum);
+    } else {
+      schedulerResult = new FCFSScheduler().schedule(processes);
     }
 
-    displayResults() {
-        const resultsBody = document.getElementById('results-tbody');
-        resultsBody.innerHTML = '';
-
-        if (this.results.length === 0) {
-            resultsBody.innerHTML = `
-                <tr>
-                    <td>1</td>
-                    <td colspan="7" class="empty-message">No results available</td>
-                </tr>
-            `;
-            return;
-        }
-
-        let totalWaitingTime = 0;
-        let totalTurnaroundTime = 0;
-
-        this.results.forEach(result => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${result.processId}</td>
-                <td>${result.arrivalTime}</td>
-                <td>${result.cpuTime}</td>
-                <td>${result.priority}</td>
-                <td>${result.completionTime}</td>
-                <td>${result.waitingTime}</td>
-                <td>${result.turnaroundTime}</td>
-                <td>${result.responseTime}</td>
-            `;
-            resultsBody.appendChild(row);
-
-            totalWaitingTime += result.waitingTime;
-            totalTurnaroundTime += result.turnaroundTime;
-        });
-
-        // Add average row
-        const avgRow = document.createElement('tr');
-        avgRow.style.fontWeight = 'bold';
-        avgRow.style.backgroundColor = '#d4e6f1';
-        avgRow.innerHTML = `
-            <td>Avg</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>-</td>
-            <td>${(totalWaitingTime / this.results.length).toFixed(2)}</td>
-            <td>${(totalTurnaroundTime / this.results.length).toFixed(2)}</td>
-            <td>-</td>
-        `;
-        resultsBody.appendChild(avgRow);
-        // Re-apply column visibility rules (hides priority column for non-priority algorithms)
-        this.updateAlgorithmUI();
+    if (Array.isArray(schedulerResult)) {
+      this.results = schedulerResult;
+      this.timeline = null;
+    } else {
+      this.results = schedulerResult.results || [];
+      this.timeline = schedulerResult.timeline || null;
     }
 
-    displayGanttChart() {
-        const ganttContainer = document.getElementById('gantt-chart');
+    this.displayResults();
+    this.displayGanttChart();
+  }
 
-        if (this.results.length === 0) {
-            ganttContainer.innerHTML = '<p class="empty-message">Run calculations to see Gantt chart</p>';
-            return;
-        }
-        // Create a clean, boxed Gantt chart using absolute positioning
-        const timelineScale = 60; // pixels per unit time
-        const minStart = Math.min(...this.results.map(r => r.startTime));
-        const maxTime = Math.max(...this.results.map(r => r.endTime));
-        const totalUnits = Math.max(1, maxTime - minStart);
-        const totalWidth = totalUnits * timelineScale;
+  displayResults() {
+    const resultsBody = document.getElementById('results-tbody');
+    resultsBody.innerHTML = '';
 
-        let html = '';
-        html += `<div class="gantt-visual">`;
-        html += `<div class="gantt-inner" style="width:${totalWidth}px">`;
-
-        // Draw blocks
-        this.results.forEach(result => {
-            const left = (result.startTime - minStart) * timelineScale;
-            const width = Math.max(2, result.cpuTime * timelineScale);
-            html += `<div class="gantt-block" style="left: ${left}px; width: ${width}px;">P${result.processId}</div>`;
-        });
-
-        html += `</div>`; // .gantt-inner
-
-        // Time scale below
-        html += `<div class="gantt-time-scale" style="width:${totalWidth}px">`;
-        for (let t = minStart; t <= maxTime; t++) {
-            const left = (t - minStart) * timelineScale;
-            html += `<div class="gantt-time-label" style="left:${left}px">${t}</div>`;
-        }
-        html += `</div>`;
-
-        html += `</div>`; // .gantt-visual
-
-        ganttContainer.innerHTML = html;
+    if (!this.results || this.results.length === 0) {
+      resultsBody.innerHTML = `<tr><td colspan="8" class="empty-message">No results available</td></tr>`;
+      return;
     }
+
+    let totalWaiting = 0;
+    let totalTurnaround = 0;
+
+    this.results.forEach(r => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${r.processId}</td>
+        <td>${r.arrivalTime}</td>
+        <td>${r.cpuTime}</td>
+        <td>${r.priority}</td>
+        <td>${r.completionTime}</td>
+        <td>${r.waitingTime}</td>
+        <td>${r.turnaroundTime}</td>
+        <td>${r.responseTime}</td>
+      `;
+      resultsBody.appendChild(row);
+      totalWaiting += r.waitingTime;
+      totalTurnaround += r.turnaroundTime;
+    });
+
+    const avgRow = document.createElement('tr');
+    avgRow.style.fontWeight = 'bold';
+    avgRow.style.backgroundColor = '#d4e6f1';
+    avgRow.innerHTML = `
+      <td>Avg</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>${(totalWaiting / this.results.length).toFixed(2)}</td>
+      <td>${(totalTurnaround / this.results.length).toFixed(2)}</td>
+      <td>-</td>
+    `;
+    resultsBody.appendChild(avgRow);
+    this.updateAlgorithmUI();
+  }
+
+  displayGanttChart() {
+    const ganttContainer = document.getElementById('gantt-chart');
+
+    if ((!this.timeline || this.timeline.length === 0) && (!this.results || this.results.length === 0)) {
+      ganttContainer.innerHTML = '<p class="empty-message">Run calculations to see Gantt chart</p>';
+      return;
+    }
+
+    const timeline = (this.timeline && this.timeline.length)
+      ? this.timeline
+      : this.results.map(r => ({ processId: r.processId, start: r.startTime, end: r.endTime }));
+
+    const minStart = Math.min(...timeline.map(s => s.start));
+    const maxEnd = Math.max(...timeline.map(s => s.end));
+    const units = Math.max(1, maxEnd - minStart);
+    const scale = 40;
+    const totalWidth = units * scale;
+
+    let html = `<div class="gantt-visual"><div class="gantt-inner" style="width:${totalWidth}px">`;
+
+    const colors = {};
+    function colorFor(pid) {
+      if (colors[pid]) return colors[pid];
+      const palette = ['#6fb7be', '#f6b26b', '#93c47d', '#8fa3ff', '#f28b82', '#c9a0dc', '#ffd966'];
+      const c = palette[Object.keys(colors).length % palette.length];
+      colors[pid] = c;
+      return c;
+    }
+
+    timeline.forEach(slice => {
+      const left = (slice.start - minStart) * scale;
+      const width = Math.max(2, (slice.end - slice.start) * scale);
+      html += `<div class="gantt-block" style="left:${left}px;width:${width}px;background:${colorFor(slice.processId)}">P${slice.processId}</div>`;
+    });
+
+    html += `</div><div class="gantt-time-scale" style="width:${totalWidth}px">`;
+    for (let t = minStart; t <= maxEnd; t++) {
+      const left = (t - minStart) * scale;
+      html += `<div class="gantt-time-label" style="left:${left}px">${t}</div>`;
+    }
+    html += `</div></div>`;
+
+    ganttContainer.innerHTML = html;
+  }
 }
 
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new CPUSchedulingApp();
+  new CPUSchedulingApp();
 });
